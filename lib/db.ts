@@ -59,7 +59,7 @@ function pg(): PgSql {
       prepare: false,
       ssl: "require",
       idle_timeout: 20,
-      connect_timeout: 10,
+      connect_timeout: 20,
       types: {
         bigint: {
           to: 20,
@@ -82,20 +82,6 @@ function pgFail(error: unknown): never {
   const code = error && typeof error === "object" && "code" in error ? String((error as { code?: string }).code) : "";
   if (code === "23505") throw new Error(`UNIQUE ${String(error)}`);
   throw error;
-}
-
-function statements(sql: string): string[] {
-  return sql
-    .split(";")
-    .map((chunk) => chunk.trim())
-    .filter((chunk) => {
-      const body = chunk
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line && !line.startsWith("--"))
-        .join("\n");
-      return body.length > 0;
-    });
 }
 
 export async function closeDb(): Promise<void> {
@@ -177,18 +163,7 @@ export async function run(sql: string, ...params: Sql[]): Promise<{ lastInsertRo
 
 export async function migrate(): Promise<void> {
   if (usePg()) {
-    const existing = await pg().unsafe("SELECT to_regclass('public.settings') AS name");
-    if (existing[0]?.name) return;
-    const file = path.join(process.cwd(), "supabase", "schema.sql");
-    let schema: string;
-    try {
-      schema = fs.readFileSync(file, "utf8");
-    } catch {
-      throw new Error("The school tables are not in Supabase yet. Run supabase/schema.sql in the SQL editor.");
-    }
-    for (const statement of statements(schema)) {
-      await pg().unsafe(statement);
-    }
+    // Tables are created in the Supabase SQL editor. Do not replay schema.sql on every request.
     return;
   }
   sqlite().exec(`

@@ -96,7 +96,15 @@ const SUBJECTS: Record<string, [string, string][]> = {
 };
 
 export async function seedIfEmpty(): Promise<void> {
-  if (await one("SELECT id FROM settings WHERE id=1")) return;
+  try {
+    if (await one("SELECT id FROM settings WHERE id=1")) return;
+  } catch (error) {
+    const code = error && typeof error === "object" && "code" in error ? String((error as { code?: string }).code) : "";
+    if (code === "42P01") {
+      throw new Error("The school tables are not in Supabase yet. Run supabase/schema.sql in the SQL editor.");
+    }
+    throw error;
+  }
   try {
     await seedSchool();
   } catch (error) {
