@@ -1,28 +1,26 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { migrate } from "./db";
 import { seedIfEmpty } from "./seed";
 
+const insideBoot = new AsyncLocalStorage<boolean>();
 let pending: Promise<void> | null = null;
-let seeding = false;
 
 export function isSeeding(): boolean {
-  return seeding;
+  return insideBoot.getStore() === true;
 }
 
 export async function boot(): Promise<void> {
   if (!pending) {
-    pending = (async () => {
-      seeding = true;
-      try {
+    pending = insideBoot
+      .run(true, async () => {
         await migrate();
         await seedIfEmpty();
-      } finally {
-        seeding = false;
-      }
-    })().catch((error) => {
-      pending = null;
-      console.error("EBOMI boot failed", error);
-      throw error;
-    });
+      })
+      .catch((error) => {
+        pending = null;
+        console.error("EBOMI boot failed", error);
+        throw error;
+      });
   }
   await pending;
 }
