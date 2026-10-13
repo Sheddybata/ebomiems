@@ -26,28 +26,14 @@ const globalDb = globalThis as typeof globalThis & {
 
 const txStore = new AsyncLocalStorage<PgSql>();
 
-function databaseUrl(): string | undefined {
-  const raw = process.env["DATABASE_URL"]?.trim();
-  if (!raw) return undefined;
-  const url = raw.replace(/^['"]+|['"]+$/g, "");
-  if (/YOUR-PASSWORD|xxxxxxxx|PROJECT_REF|:PASSWORD@/.test(url)) return undefined;
-  return url;
-}
-
 function usePg(): boolean {
-  return Boolean(databaseUrl()) && !process.env["EBOMI_DB"];
+  return Boolean(process.env.DATABASE_URL) && !process.env.EBOMI_DB;
 }
 
-let booting = false;
-
-export function markBooting(active: boolean): void {
-  booting = active;
-}
-
-async function ready(): Promise<void> {
-  if (booting) return;
-  const { boot } = await import("./ready");
-  await boot();
+async function ensure(): Promise<void> {
+  const ready = await import("./ready");
+  if (ready.isSeeding()) return;
+  await ready.boot();
 }
 
 function dbFile(): string {
@@ -58,11 +44,6 @@ function dbFile(): string {
 }
 
 function sqlite(): DatabaseSync {
-  if (process.env.VERCEL === "1" && !process.env["EBOMI_DB"]) {
-    throw new Error(
-      "DATABASE_URL is missing or still the example string. In Vercel → Settings → Environment Variables, set Production DATABASE_URL to the Session pooler URI (host aws-0-….pooler.supabase.com, user postgres.PROJECT_REF).",
-    );
-  }
   if (globalDb.__ebomi) return globalDb.__ebomi;
   const file = dbFile();
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -76,7 +57,7 @@ function sqlite(): DatabaseSync {
 
 function pg(): PgSql {
   if (!globalDb.__ebomiPg) {
-    globalDb.__ebomiPg = postgres(databaseUrl()!, {
+    globalDb.__ebomiPg = postgres(process.env.DATABASE_URL!, {
       max: 1,
       prepare: false,
       ssl: "require",
@@ -110,7 +91,7 @@ export async function closeDb(): Promise<void> {
 let depth = 0;
 
 export async function withTx<T>(fn: () => Promise<T> | T): Promise<T> {
-  await ready();
+  await ensure();
   if (usePg()) {
     if (txStore.getStore()) return await fn();
     try {
@@ -139,7 +120,7 @@ export async function withTx<T>(fn: () => Promise<T> | T): Promise<T> {
 }
 
 export async function rows<T>(sql: string, ...params: Sql[]): Promise<T[]> {
-  await ready();
+  await ensure();
   if (usePg()) {
     try {
       const result = await pg().unsafe(toPg(sql), params as never[]);
@@ -152,7 +133,7 @@ export async function rows<T>(sql: string, ...params: Sql[]): Promise<T[]> {
 }
 
 export async function one<T>(sql: string, ...params: Sql[]): Promise<T | undefined> {
-  await ready();
+  await ensure();
   if (usePg()) {
     const found = await rows<T>(sql, ...params);
     return found[0];
@@ -161,7 +142,7 @@ export async function one<T>(sql: string, ...params: Sql[]): Promise<T | undefin
 }
 
 export async function run(sql: string, ...params: Sql[]): Promise<{ lastInsertRowid: number; changes: number }> {
-  await ready();
+  await ensure();
   if (usePg()) {
     try {
       const insert = sql.match(/^\s*insert\s+into\s+(\w+)/i);
