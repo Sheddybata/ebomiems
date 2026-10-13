@@ -1,5 +1,6 @@
 import "./quiet";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { DatabaseSync } from "node:sqlite";
 
@@ -7,19 +8,24 @@ type Sql = string | number | bigint | null;
 
 const globalDb = globalThis as typeof globalThis & { __ebomi?: DatabaseSync };
 
-function openDatabase(): DatabaseSync {
+function dbFile(): string {
+  if (process.env.EBOMI_DB) return process.env.EBOMI_DB;
+  const ephemeral = process.env.VERCEL === "1" || process.env.NEXT_PHASE === "phase-production-build";
+  if (ephemeral) return path.join(os.tmpdir(), `ebomi-${process.pid}.sqlite`);
+  return path.join(process.cwd(), "data", "ebomi.sqlite");
+}
+
+function sqlite(): DatabaseSync {
   if (globalDb.__ebomi) return globalDb.__ebomi;
-  const file = process.env.EBOMI_DB || path.join(process.cwd(), "data", "ebomi.sqlite");
+  const file = dbFile();
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  const database = new DatabaseSync(file);
+  const database = new DatabaseSync(file, { timeout: 60000 });
   database.exec("PRAGMA foreign_keys = ON");
   database.exec("PRAGMA journal_mode = WAL");
   database.exec("PRAGMA busy_timeout = 60000");
   globalDb.__ebomi = database;
   return database;
 }
-
-export const db = openDatabase();
 
 export function closeDb(): void {
   globalDb.__ebomi?.close();
@@ -31,15 +37,15 @@ let depth = 0;
 export function withTx<T>(fn: () => T): T {
   if (depth > 0) return fn();
   depth += 1;
-  db.exec("BEGIN IMMEDIATE");
+  sqlite().exec("BEGIN IMMEDIATE");
   try {
     const result = fn();
-    db.exec("COMMIT");
+    sqlite().exec("COMMIT");
     depth -= 1;
     return result;
   } catch (error) {
     try {
-      db.exec("ROLLBACK");
+      sqlite().exec("ROLLBACK");
     } catch {
       /* already closed */
     }
@@ -49,20 +55,20 @@ export function withTx<T>(fn: () => T): T {
 }
 
 export function rows<T>(sql: string, ...params: Sql[]): T[] {
-  return db.prepare(sql).all(...params) as T[];
+  return sqlite().prepare(sql).all(...params) as T[];
 }
 
 export function one<T>(sql: string, ...params: Sql[]): T | undefined {
-  return db.prepare(sql).get(...params) as T | undefined;
+  return sqlite().prepare(sql).get(...params) as T | undefined;
 }
 
 export function run(sql: string, ...params: Sql[]): { lastInsertRowid: number; changes: number } {
-  const info = db.prepare(sql).run(...params);
+  const info = sqlite().prepare(sql).run(...params);
   return { lastInsertRowid: Number(info.lastInsertRowid), changes: Number(info.changes) };
 }
 
 export function migrate(): void {
-  db.exec(`
+  sqlite().exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY,
       role TEXT NOT NULL CHECK (role IN ('admin','bursar','teacher','parent')),
@@ -325,7 +331,7 @@ export function migrate(): void {
     ["previous_class", "TEXT"],
     ["previous_position", "TEXT"],
   ] as const) {
-    const present = db.prepare("PRAGMA table_info(students)").all() as { name: string }[];
-    if (!present.some((item) => item.name === column)) db.exec(`ALTER TABLE students ADD COLUMN ${column} ${type}`);
+    const present = sqlite().prepare("PRAGMA table_info(students)").all() as { name: string }[];
+    if (!present.some((item) => item.name === column)) sqlite().exec(`ALTER TABLE students ADD COLUMN ${column} ${type}`);
   }
 }
