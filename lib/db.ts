@@ -59,7 +59,7 @@ function pg(): PgSql {
       prepare: false,
       ssl: "require",
       idle_timeout: 20,
-      connect_timeout: 30,
+      connect_timeout: 10,
       types: {
         bigint: {
           to: 20,
@@ -177,8 +177,15 @@ export async function run(sql: string, ...params: Sql[]): Promise<{ lastInsertRo
 
 export async function migrate(): Promise<void> {
   if (usePg()) {
+    const existing = await pg().unsafe("SELECT to_regclass('public.settings') AS name");
+    if (existing[0]?.name) return;
     const file = path.join(process.cwd(), "supabase", "schema.sql");
-    const schema = fs.readFileSync(file, "utf8");
+    let schema: string;
+    try {
+      schema = fs.readFileSync(file, "utf8");
+    } catch {
+      throw new Error("The school tables are not in Supabase yet. Run supabase/schema.sql in the SQL editor.");
+    }
     for (const statement of statements(schema)) {
       await pg().unsafe(statement);
     }
