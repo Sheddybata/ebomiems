@@ -26,8 +26,17 @@ const globalDb = globalThis as typeof globalThis & {
 
 const txStore = new AsyncLocalStorage<PgSql>();
 
+function databaseUrl(): string | undefined {
+  const url = process.env.DATABASE_URL;
+  if (!url) return undefined;
+  if (url.includes("postgres.xxxxxxxx") || url.includes("YOUR-PASSWORD") || url.includes("PROJECT_REF")) {
+    return undefined;
+  }
+  return url;
+}
+
 function usePg(): boolean {
-  return Boolean(process.env.DATABASE_URL) && !process.env.EBOMI_DB;
+  return Boolean(databaseUrl()) && !process.env.EBOMI_DB;
 }
 
 async function ensure(): Promise<void> {
@@ -57,7 +66,7 @@ function sqlite(): DatabaseSync {
 
 function pg(): PgSql {
   if (!globalDb.__ebomiPg) {
-    globalDb.__ebomiPg = postgres(process.env.DATABASE_URL!, {
+    globalDb.__ebomiPg = postgres(databaseUrl()!, {
       max: 1,
       prepare: false,
       ssl: "require",
