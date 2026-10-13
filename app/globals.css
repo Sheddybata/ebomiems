@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-source-sans), "Segoe UI", sans-serif;
+  --font-serif: var(--font-source-serif), Georgia, serif;
+  --color-ink: #1e1a14;
+  --color-muted: #5c564c;
+  --color-paper: #f3efe6;
+  --color-card: #fffdf8;
+  --color-line: #e3d8c4;
+  --color-moss: #8e1515;
+  --color-moss-deep: #5c0e0e;
+  --color-leaf: #8a6a2f;
+  --color-gold: #a07d3b;
+  --color-gold-soft: #f4e7c8;
+  --color-clay: #8c3a32;
+  --color-clay-soft: #f8e7e3;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+.sheet {
+  background: white;
+  border: 4px double #8e1515;
+  color: #1e1a14;
+  padding: 1.25rem;
+}
+
+.sheet table.marks {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sheet table.marks th,
+.sheet table.marks td {
+  border: 1px solid #d9d0c0;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.4rem;
+  vertical-align: top;
+}
+
+.sheet table.marks th {
+  background: #f6f1e6;
+  font-weight: 650;
+  text-align: left;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  .sheet {
+    border-color: #8e1515;
+  }
+
+  .broadsheet {
+    page: land;
+  }
+}
+
+@page land {
+  size: A4 landscape;
+  margin: 8mm;
+}
