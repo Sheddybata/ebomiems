@@ -8,8 +8,8 @@ const ROLE: Record<string, string> = { admin: "Admin", bursar: "Bursar", teacher
 
 export default async function StaffPage({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string; edit?: string }> }) {
   const query = await searchParams;
-  const staff = listStaff();
-  const classes = listClasses();
+  const staff = (await listStaff());
+  const classes = (await listClasses());
   const people = staff.map((person) => {
     const held = classes.filter((klass) => klass.form_teacher_id === person.id).map((klass) => classLabel(klass.name, klass.arm));
     return {

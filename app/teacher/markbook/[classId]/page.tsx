@@ -13,21 +13,21 @@ export default async function MarkbookPage({ params, searchParams }: { params: P
   const { classId } = await params;
   const query = await searchParams;
   const id = Number(classId);
-  if (!teacherOwns(user.id, id)) notFound();
-  const klass = getClass(id);
+  if (!(await teacherOwns(user.id, id))) notFound();
+  const klass = (await getClass(id));
   if (!klass) notFound();
-  const termId = Number(query.term || currentTerm().id);
-  const subjects = subjectsForTrack(klass.track);
+  const termId = Number(query.term || (await currentTerm()).id);
+  const subjects = (await subjectsForTrack(klass.track));
   const subjectId = Number(query.subject || subjects[0]?.id);
   let book;
   try {
-    book = markbook(id, termId, subjectId);
+    book = (await markbook(id, termId, subjectId));
   } catch {
     notFound();
   }
   const locked = book.release.status !== "open";
   const gaps = book.rows.filter((row) => (book.assess.kind === "numeric" ? row.score?.ca == null : !row.score?.qualitative));
-  const stored = scoresForClass(id, termId);
+  const stored = (await scoresForClass(id, termId));
   const byCell = new Map(stored.map((score) => [`${score.student_id}:${score.subject_id}`, score]));
   const openSubjects = new Set<number>();
   for (const subject of book.subjects) {
@@ -39,7 +39,7 @@ export default async function MarkbookPage({ params, searchParams }: { params: P
   }
   return (
     <div>
-      <ClassBar classId={id} label={classLabel(book.klass.name, book.klass.arm)} term={termTitle(book.term.name, book.term.session_name)} isForm={teacherOwns(user.id, id, true)} current="markbook" />
+      <ClassBar classId={id} label={classLabel(book.klass.name, book.klass.arm)} term={termTitle(book.term.name, book.term.session_name)} isForm={(await teacherOwns(user.id, id, true))} current="markbook" />
       <Banner error={query.error} ok={query.ok} />
       <div className="flex flex-wrap gap-2 text-sm">
         {book.subjects.map((subject) => {

@@ -10,11 +10,11 @@ export default async function RosterPage({ params }: { params: Promise<{ classId
   const user = await requireUser("teacher");
   const { classId } = await params;
   const id = Number(classId);
-  if (!teacherOwns(user.id, id, true)) notFound();
-  const klass = getClass(id);
+  if (!(await teacherOwns(user.id, id, true))) notFound();
+  const klass = (await getClass(id));
   if (!klass) notFound();
-  const term = currentTerm();
-  const rows = formRoster(id);
+  const term = (await currentTerm());
+  const rows = (await formRoster(id));
   return (
     <div>
       <ClassBar classId={id} label={classLabel(klass.name, klass.arm)} term={termTitle(term.name, term.session_name)} isForm current="roster" />

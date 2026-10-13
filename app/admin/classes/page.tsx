@@ -5,8 +5,8 @@ import { listClasses, listStaff } from "@/lib/repo";
 
 export default async function ClassesPage({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string }> }) {
   const query = await searchParams;
-  const classes = listClasses();
-  const teachers = listStaff().filter((person) => person.role === "teacher");
+  const classes = (await listClasses());
+  const teachers = (await listStaff()).filter((person) => person.role === "teacher");
   return (
     <div>
       <PageTitle title="Classes" lede="Every class from Creche to SSS 3. The form teacher owns the register, roster, comments and ratings." />

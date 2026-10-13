@@ -7,8 +7,8 @@ const TERM_NAMES = ["First", "Second", "Third"] as const;
 
 export default async function SessionsPage({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string }> }) {
   const query = await searchParams;
-  const terms = listTerms();
-  const sessions = listSessions();
+  const terms = (await listTerms());
+  const sessions = (await listSessions());
   const missing = sessions
     .map((session) => {
       const held = terms.filter((term) => term.session_id === session.id).map((term) => term.name);

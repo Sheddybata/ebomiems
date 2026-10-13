@@ -7,7 +7,7 @@ import { getPupil, getSettings } from "@/lib/repo";
 
 export default async function AdminLetterPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const pupil = getPupil(Number(id));
+  const pupil = (await getPupil(Number(id)));
   if (!pupil) notFound();
   return (
     <div>
@@ -15,7 +15,7 @@ export default async function AdminLetterPage({ params }: { params: Promise<{ id
         <Link href={`/admin/students/${pupil.id}`} className="text-sm font-semibold text-moss">Back to file</Link>
         <PrintButton label="Print letter" />
       </div>
-      <AdmissionLetter pupil={pupil} settings={getSettings()} className={classLabel(pupil.class_name, pupil.class_arm)} />
+      <AdmissionLetter pupil={pupil} settings={(await getSettings())} className={classLabel(pupil.class_name, pupil.class_arm)} />
     </div>
   );
 }

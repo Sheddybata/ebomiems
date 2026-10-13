@@ -4,7 +4,7 @@ import { getSettings } from "@/lib/repo";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string }> }) {
   const query = await searchParams;
-  const settings = getSettings();
+  const settings = (await getSettings());
   return (
     <div>
       <PageTitle title="School settings" lede="Bank details are what parents copy. The report lock holds a published term until that term’s own charges are covered. A later bill does not hide a term that was already paid." />

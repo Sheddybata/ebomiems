@@ -12,12 +12,12 @@ export default async function FeesPage({ params, searchParams }: { params: Promi
   const user = await requireUser("parent");
   const { id } = await params;
   const query = await searchParams;
-  const pupil = getPupil(Number(id));
+  const pupil = (await getPupil(Number(id)));
   if (!pupil || pupil.parent_id !== user.id) notFound();
-  const settings = getSettings();
-  const invoices = studentInvoices(pupil.id);
-  const proofs = studentProofs(pupil.id);
-  const receipts = ledgerRows(pupil.id).filter((entry) => entry.direction === "credit");
+  const settings = (await getSettings());
+  const invoices = (await studentInvoices(pupil.id));
+  const proofs = (await studentProofs(pupil.id));
+  const receipts = (await ledgerRows(pupil.id)).filter((entry) => entry.direction === "credit");
   return (
     <div>
       <PageTitle title={`${pupil.first_name}'s fees`} lede="The balance is the ledger, not a figure someone typed. A transfer you upload stays a request until the bursar approves it." />

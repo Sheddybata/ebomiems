@@ -10,9 +10,9 @@ import { getInvoice, getSettings } from "@/lib/repo";
 export default async function InvoicePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; ok?: string }> }) {
   const { id } = await params;
   const query = await searchParams;
-  const data = getInvoice(Number(id));
+  const data = (await getInvoice(Number(id)));
   if (!data?.pupil) notFound();
-  const settings = getSettings();
+  const settings = (await getSettings());
   const due = data.invoice.arrears_kobo + data.invoice.lines_kobo;
   return (
     <div>

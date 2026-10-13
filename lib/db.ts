@@ -1,12 +1,37 @@
 import "./quiet";
+import { AsyncLocalStorage } from "node:async_hooks";
 import fs from "fs";
 import os from "os";
 import path from "path";
 import { DatabaseSync } from "node:sqlite";
+import postgres from "postgres";
 
 type Sql = string | number | bigint | null;
+type PgSql = ReturnType<typeof postgres>;
 
-const globalDb = globalThis as typeof globalThis & { __ebomi?: DatabaseSync };
+const NO_RETURNING = new Set([
+  "teacher_classes",
+  "result_releases",
+  "remarks",
+  "trait_ratings",
+  "attendance_marks",
+  "attendance_summaries",
+  "counters",
+]);
+
+const globalDb = globalThis as typeof globalThis & {
+  __ebomi?: DatabaseSync;
+  __ebomiPg?: PgSql;
+};
+
+const txStore = new AsyncLocalStorage<PgSql>();
+
+function usePg(): boolean {
+  const url = process.env.DATABASE_URL?.trim();
+  if (!url || process.env.EBOMI_DB) return false;
+  if (/YOUR-PASSWORD|xxxxxxxx|PROJECT_REF|:PASSWORD@/.test(url)) return false;
+  return true;
+}
 
 function dbFile(): string {
   if (process.env.EBOMI_DB) return process.env.EBOMI_DB;
@@ -27,19 +52,77 @@ function sqlite(): DatabaseSync {
   return database;
 }
 
-export function closeDb(): void {
+function pg(): PgSql {
+  if (!globalDb.__ebomiPg) {
+    globalDb.__ebomiPg = postgres(process.env.DATABASE_URL!, {
+      max: 1,
+      prepare: false,
+      ssl: "require",
+      idle_timeout: 20,
+      connect_timeout: 30,
+      types: {
+        bigint: {
+          to: 20,
+          from: [20],
+          parse: (value: string) => Number(value),
+          serialize: (value: number) => String(value),
+        },
+      },
+    });
+  }
+  return txStore.getStore() ?? globalDb.__ebomiPg;
+}
+
+function toPg(sql: string): string {
+  let n = 0;
+  return sql.replace(/\bifnull\s*\(/gi, "COALESCE(").replace(/\?/g, () => `$${++n}`);
+}
+
+function pgFail(error: unknown): never {
+  const code = error && typeof error === "object" && "code" in error ? String((error as { code?: string }).code) : "";
+  if (code === "23505") throw new Error(`UNIQUE ${String(error)}`);
+  throw error;
+}
+
+function statements(sql: string): string[] {
+  return sql
+    .split(";")
+    .map((chunk) => chunk.trim())
+    .filter((chunk) => {
+      const body = chunk
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith("--"))
+        .join("\n");
+      return body.length > 0;
+    });
+}
+
+export async function closeDb(): Promise<void> {
+  if (globalDb.__ebomiPg) {
+    await globalDb.__ebomiPg.end({ timeout: 5 });
+    globalDb.__ebomiPg = undefined;
+  }
   globalDb.__ebomi?.close();
   globalDb.__ebomi = undefined;
 }
 
 let depth = 0;
 
-export function withTx<T>(fn: () => T): T {
-  if (depth > 0) return fn();
+export async function withTx<T>(fn: () => Promise<T> | T): Promise<T> {
+  if (usePg()) {
+    if (txStore.getStore()) return await fn();
+    try {
+      return (await pg().begin(async (tx) => txStore.run(tx as unknown as PgSql, async () => await fn()))) as T;
+    } catch (error) {
+      pgFail(error);
+    }
+  }
+  if (depth > 0) return await fn();
   depth += 1;
   sqlite().exec("BEGIN IMMEDIATE");
   try {
-    const result = fn();
+    const result = await fn();
     sqlite().exec("COMMIT");
     depth -= 1;
     return result;
@@ -54,20 +137,53 @@ export function withTx<T>(fn: () => T): T {
   }
 }
 
-export function rows<T>(sql: string, ...params: Sql[]): T[] {
+export async function rows<T>(sql: string, ...params: Sql[]): Promise<T[]> {
+  if (usePg()) {
+    try {
+      const result = await pg().unsafe(toPg(sql), params as never[]);
+      return [...result] as T[];
+    } catch (error) {
+      pgFail(error);
+    }
+  }
   return sqlite().prepare(sql).all(...params) as T[];
 }
 
-export function one<T>(sql: string, ...params: Sql[]): T | undefined {
+export async function one<T>(sql: string, ...params: Sql[]): Promise<T | undefined> {
+  if (usePg()) {
+    const found = await rows<T>(sql, ...params);
+    return found[0];
+  }
   return sqlite().prepare(sql).get(...params) as T | undefined;
 }
 
-export function run(sql: string, ...params: Sql[]): { lastInsertRowid: number; changes: number } {
+export async function run(sql: string, ...params: Sql[]): Promise<{ lastInsertRowid: number; changes: number }> {
+  if (usePg()) {
+    try {
+      const insert = sql.match(/^\s*insert\s+into\s+(\w+)/i);
+      const table = insert?.[1] ?? "";
+      const pgSql = toPg(sql);
+      const returning = insert && table && !NO_RETURNING.has(table) && !/\breturning\b/i.test(sql);
+      const result = await pg().unsafe(returning ? `${pgSql} RETURNING id` : pgSql, params as never[]);
+      const id = returning ? Number((result[0] as { id?: number } | undefined)?.id ?? 0) : 0;
+      return { lastInsertRowid: id, changes: result.count };
+    } catch (error) {
+      pgFail(error);
+    }
+  }
   const info = sqlite().prepare(sql).run(...params);
   return { lastInsertRowid: Number(info.lastInsertRowid), changes: Number(info.changes) };
 }
 
-export function migrate(): void {
+export async function migrate(): Promise<void> {
+  if (usePg()) {
+    const file = path.join(process.cwd(), "supabase", "schema.sql");
+    const schema = fs.readFileSync(file, "utf8");
+    for (const statement of statements(schema)) {
+      await pg().unsafe(statement);
+    }
+    return;
+  }
   sqlite().exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY,

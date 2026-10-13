@@ -4,7 +4,7 @@ import { teacherDesk } from "@/lib/repo";
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser("teacher");
-  const desk = teacherDesk(user.id);
+  const desk = (await teacherDesk(user.id));
   const row = desk.classes.find((item) => item.isForm) ?? desk.classes[0];
   const extra = row
     ? [

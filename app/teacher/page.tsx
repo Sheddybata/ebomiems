@@ -6,7 +6,7 @@ import { teacherDesk } from "@/lib/repo";
 
 export default async function TeacherPage() {
   const user = await requireUser("teacher");
-  const desk = teacherDesk(user.id);
+  const desk = (await teacherDesk(user.id));
   return (
     <div>
       <PageTitle title="My desk" lede={`${termTitle(desk.term.name, desk.term.session_name)}. New names appear here as soon as admin enrols them into your class.`} />

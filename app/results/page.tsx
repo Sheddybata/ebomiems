@@ -11,19 +11,19 @@ import { CHECK_COOKIE } from "@/lib/session";
 
 export default async function ResultsPage({ searchParams }: { searchParams: Promise<{ term?: string; error?: string }> }) {
   const query = await searchParams;
-  const terms = listTerms().slice().reverse();
+  const terms = (await listTerms()).slice().reverse();
   const jar = await cookies();
-  let found: ReturnType<typeof findByAdmissionPin>;
+  let found: Awaited<ReturnType<typeof findByAdmissionPin>>;
   try {
     const saved = JSON.parse(jar.get(CHECK_COOKIE)?.value || "null") as { admission?: string; pin?: string } | null;
-    found = saved?.admission && saved.pin ? findByAdmissionPin(saved.admission, saved.pin) : undefined;
+    found = saved?.admission && saved.pin ? (await findByAdmissionPin(saved.admission, saved.pin)) : undefined;
   } catch {
     found = undefined;
   }
   const termId = Number(query.term || terms[0]?.id || 0);
-  const gate = found ? gateTerm(found.id, termId) : null;
-  const sheet = found && gate === "ready" ? buildReport(found.id, termId) : null;
-  const klass = found ? getClass(found.class_id) : undefined;
+  const gate = found ? (await gateTerm(found.id, termId)) : null;
+  const sheet = found && gate === "ready" ? (await buildReport(found.id, termId)) : null;
+  const klass = found ? (await getClass(found.class_id)) : undefined;
   return (
     <PublicFrame paths={false}>
       <main className="mx-auto max-w-4xl px-4 py-10">

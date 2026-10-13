@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   icons: { icon: "/logo.png" },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  boot();
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  (await boot());
   return (
     <html lang="en" className={`${sans.variable} ${serif.variable}`}>
       <body className="font-sans text-ink antialiased">{children}</body>

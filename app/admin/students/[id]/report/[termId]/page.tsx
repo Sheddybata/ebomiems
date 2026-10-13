@@ -7,10 +7,10 @@ import { gateTerm, releaseOf } from "@/lib/repo";
 
 export default async function StaffReportPage({ params }: { params: Promise<{ id: string; termId: string }> }) {
   const { id, termId } = await params;
-  const sheet = buildReport(Number(id), Number(termId));
+  const sheet = (await buildReport(Number(id), Number(termId)));
   if (!sheet) notFound();
-  const gate = gateTerm(Number(id), Number(termId));
-  const release = releaseOf(sheet.classId, Number(termId));
+  const gate = (await gateTerm(Number(id), Number(termId)));
+  const release = (await releaseOf(sheet.classId, Number(termId)));
   const banner = release.status !== "published"
     ? "Working copy — not published"
     : gate === "held"

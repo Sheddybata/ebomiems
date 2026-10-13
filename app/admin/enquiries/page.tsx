@@ -16,7 +16,7 @@ const TITLES: Record<string, string> = { apply: "Admission", inquire: "Question"
 
 export default async function EnquiriesPage({ searchParams }: { searchParams: Promise<{ kind?: string; error?: string; ok?: string }> }) {
   const query = await searchParams;
-  const rows = listEnquiries(query.kind);
+  const rows = (await listEnquiries(query.kind));
   return (
     <div>
       <PageTitle title="Front door" lede="People considering the school. An admission request is not an enrolment. A teaching application is not a staff login." />

@@ -10,14 +10,14 @@ import { classForTerm, gateTerm, getPupil, ledgerRows, listClasses, listTerms, s
 export default async function StudentFilePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; ok?: string; term?: string }> }) {
   const { id } = await params;
   const query = await searchParams;
-  const pupil = getPupil(Number(id));
+  const pupil = (await getPupil(Number(id)));
   if (!pupil) notFound();
   const flash = await takeFlash();
-  const classes = listClasses();
-  const terms = listTerms();
+  const classes = (await listClasses());
+  const terms = (await listTerms());
   const termId = Number(query.term || terms.find((term) => term.is_current)?.id);
-  const ledger = ledgerRows(pupil.id);
-  const invoices = studentInvoices(pupil.id);
+  const ledger = (await ledgerRows(pupil.id));
+  const invoices = (await studentInvoices(pupil.id));
   return (
     <div>
       <PageTitle title={personName(pupil)} lede={`${pupil.admission_no} · ${classLabel(pupil.class_name, pupil.class_arm)} · ${pupil.gender}`}>
@@ -76,7 +76,7 @@ export default async function StudentFilePage({ params, searchParams }: { params
           <RemarkBox studentId={pupil.id} termId={termId} />
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <button className="rounded-md bg-moss px-3 py-2 text-sm font-semibold text-white">Save remark</button>
-            {classForTerm(pupil.id, termId) ? <Link className="text-sm font-semibold text-moss" href={`/admin/students/${pupil.id}/report/${termId}`}>Open sheet · {gateTerm(pupil.id, termId)}</Link> : <span className="text-sm text-muted">No result for this term yet.</span>}
+            {(await classForTerm(pupil.id, termId)) ? <Link className="text-sm font-semibold text-moss" href={`/admin/students/${pupil.id}/report/${termId}`}>Open sheet · {(await gateTerm(pupil.id, termId))}</Link> : <span className="text-sm text-muted">No result for this term yet.</span>}
           </div>
         </form>
       </section>
@@ -107,6 +107,6 @@ export default async function StudentFilePage({ params, searchParams }: { params
 
 async function RemarkBox({ studentId, termId }: { studentId: number; termId: number }) {
   const { one } = await import("@/lib/db");
-  const row = one<{ principal_remark: string }>("SELECT principal_remark FROM remarks WHERE student_id=? AND term_id=?", studentId, termId);
+  const row = (await one<{ principal_remark: string }>("SELECT principal_remark FROM remarks WHERE student_id=? AND term_id=?", studentId, termId));
   return <textarea name="remark" defaultValue={row?.principal_remark || ""} rows={3} className={`${inputClass} mt-2`} placeholder="Principal's remark for this term" />;
 }

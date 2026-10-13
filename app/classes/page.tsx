@@ -4,8 +4,8 @@ import { classLabel } from "@/lib/format";
 import { listClasses } from "@/lib/repo";
 import { DIVISIONS } from "@/lib/site";
 
-export default function ClassesPage() {
-  const classes = listClasses();
+export default async function ClassesPage() {
+  const classes = (await listClasses());
   return (
     <PublicFrame>
       <DoorPage kicker="Classes" title="From Creche to SSS 3" lede="These are the classes on the school register. The admissions office confirms the right class from the child’s date of birth. An application does not place a child.">

@@ -5,7 +5,7 @@ import { listSubjects } from "@/lib/repo";
 
 export default async function SubjectsPage({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string }> }) {
   const query = await searchParams;
-  const subjects = listSubjects();
+  const subjects = (await listSubjects());
   return (
     <div>
       <PageTitle title="Subjects" lede="These names appear on the public curriculum, teacher markbooks and report sheets. Change Primary here when the school sends the real list. Removing a subject deletes marks already entered for it." />

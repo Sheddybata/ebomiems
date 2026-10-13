@@ -13,12 +13,12 @@ export default async function RegisterPage({ params, searchParams }: { params: P
   const { classId } = await params;
   const query = await searchParams;
   const id = Number(classId);
-  if (!teacherOwns(user.id, id)) notFound();
-  const klass = getClass(id);
+  if (!(await teacherOwns(user.id, id))) notFound();
+  const klass = (await getClass(id));
   if (!klass) notFound();
   const day = query.day || todayISO();
-  const register = registerDay(id, day);
-  const term = currentTerm();
+  const register = (await registerDay(id, day));
+  const term = (await currentTerm());
   const shift = (days: number) => {
     const date = new Date(day + "T00:00:00Z");
     date.setUTCDate(date.getUTCDate() + days);
@@ -26,7 +26,7 @@ export default async function RegisterPage({ params, searchParams }: { params: P
   };
   return (
     <div>
-      <ClassBar classId={id} label={classLabel(klass.name, klass.arm)} term={termTitle(term.name, term.session_name)} isForm={teacherOwns(user.id, id, true)} current="register" />
+      <ClassBar classId={id} label={classLabel(klass.name, klass.arm)} term={termTitle(term.name, term.session_name)} isForm={(await teacherOwns(user.id, id, true))} current="register" />
       <h1 className="font-serif text-3xl text-moss">{formatDay(day)}</h1>
       <Banner error={query.error} ok={query.ok} />
       <div className="mt-2 flex gap-3 text-sm font-semibold text-moss">

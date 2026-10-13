@@ -14,10 +14,10 @@ export default async function CommentsPage({ params, searchParams }: { params: P
   const { classId } = await params;
   const query = await searchParams;
   const id = Number(classId);
-  if (!teacherOwns(user.id, id, true)) notFound();
-  const klass = getClass(id);
+  if (!(await teacherOwns(user.id, id, true))) notFound();
+  const klass = (await getClass(id));
   if (!klass) notFound();
-  const sheet = commentSheet(id);
+  const sheet = (await commentSheet(id));
   const locked = sheet.release.status !== "open";
   const requested = Number(query.student);
   const open = sheet.pupils.find((row) => row.pupil.id === requested) ?? sheet.pupils.find((row) => !row.remark?.form_comment?.trim()) ?? sheet.pupils[0];

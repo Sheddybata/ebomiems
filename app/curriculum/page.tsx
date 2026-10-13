@@ -5,7 +5,13 @@ import { PRIMARY_SCALE, WAEC_SCALE } from "@/lib/grading";
 import { subjectsForTrack } from "@/lib/repo";
 import { DIVISIONS } from "@/lib/site";
 
-export default function CurriculumPage() {
+export default async function CurriculumPage() {
+  const byTrack: Record<string, Awaited<ReturnType<typeof subjectsForTrack>>> = {};
+  for (const division of DIVISIONS) {
+    for (const track of division.tracks) {
+      byTrack[track] = await subjectsForTrack(track);
+    }
+  }
   return (
     <PublicFrame>
       <DoorPage kicker="Curriculum" title="What is taught, and how it is graded" lede="The same child can move from a qualitative creche report to a WAEC-scale Senior Secondary sheet without changing schools. Positions are given only where the grade is a number.">
@@ -19,7 +25,7 @@ export default function CurriculumPage() {
                   <article key={track} className="rounded-lg border border-line bg-card p-4">
                     <h3 className="font-semibold">{TRACK_LABELS[track] || track}</h3>
                     <ul className="mt-2 columns-1 text-sm leading-7 sm:columns-2">
-                      {subjectsForTrack(track).map((subject) => <li key={subject.id}>{subject.name}</li>)}
+                      {(byTrack[track] ?? []).map((subject) => <li key={subject.id}>{subject.name}</li>)}
                     </ul>
                   </article>
                 ))}

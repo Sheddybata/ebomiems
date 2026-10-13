@@ -4,8 +4,8 @@ import { formatNaira } from "@/lib/money";
 import type { ReportSheet } from "@/lib/report";
 import { getSettings } from "@/lib/repo";
 
-export function ReportDocument({ sheet, banner }: { sheet: ReportSheet; banner?: string }) {
-  const settings = getSettings();
+export async function ReportDocument({ sheet, banner }: { sheet: ReportSheet; banner?: string }) {
+  const settings = (await getSettings());
   const scale = sheet.assess.kind === "numeric" && sheet.assess.scale === "waec" ? WAEC_SCALE : PRIMARY_SCALE;
   return (
     <article className="sheet">

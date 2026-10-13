@@ -8,7 +8,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const user = await getUser();
   if (!user) return new NextResponse("Sign in required.", { status: 401 });
   const { id } = await context.params;
-  const proof = getProof(Number(id));
+  const proof = (await getProof(Number(id)));
   if (!proof?.file_path) return new NextResponse("Not found.", { status: 404 });
   const staff = user.role === "admin" || user.role === "bursar";
   const owner = user.role === "parent" && proof.parent_id === user.id;

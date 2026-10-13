@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function NotFound() {
+export default async function NotFound() {
   return (
     <main className="mx-auto max-w-lg px-4 py-20">
       <h1 className="font-serif text-3xl text-moss">That page is not on the register</h1>

@@ -15,11 +15,11 @@ export function homeFor(role: Role): string {
 }
 
 export async function getUser(): Promise<SessionUser | null> {
-  boot();
+  (await boot());
   const jar = await cookies();
   const id = readToken(jar.get(SESSION_COOKIE)?.value);
   if (!id) return null;
-  return one<SessionUser>("SELECT id, role, name, email, phone FROM users WHERE id=?", id) ?? null;
+  return (await one<SessionUser>("SELECT id, role, name, email, phone FROM users WHERE id=?", id)) ?? null;
 }
 
 export async function requireUser(...roles: Role[]): Promise<SessionUser> {
@@ -30,15 +30,15 @@ export async function requireUser(...roles: Role[]): Promise<SessionUser> {
   return user;
 }
 
-export function matchLogin(identity: string): (SessionUser & { password_hash: string }) | undefined {
+export async function matchLogin(identity: string): Promise<(SessionUser & { password_hash: string }) | undefined> {
   const trimmed = identity.trim();
   if (!trimmed) return undefined;
   if (trimmed.includes("@")) {
-    return one("SELECT id, role, name, email, phone, password_hash FROM users WHERE lower(email)=?", trimmed.toLowerCase());
+    return (await one("SELECT id, role, name, email, phone, password_hash FROM users WHERE lower(email)=?", trimmed.toLowerCase()));
   }
   const phone = normalizePhone(trimmed);
   if (!phone) return undefined;
-  return one("SELECT id, role, name, email, phone, password_hash FROM users WHERE phone=?", phone);
+  return (await one("SELECT id, role, name, email, phone, password_hash FROM users WHERE phone=?", phone));
 }
 
 export function passwordMatches(password: string, hash: string): boolean {

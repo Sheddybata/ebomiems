@@ -8,8 +8,8 @@ import { currentTerm } from "@/lib/repo";
 export default async function BroadsheetPage({ params, searchParams }: { params: Promise<{ classId: string }>; searchParams: Promise<{ term?: string }> }) {
   const { classId } = await params;
   const query = await searchParams;
-  const termId = Number(query.term || currentTerm().id);
-  const board = buildBroadsheet(Number(classId), termId);
+  const termId = Number(query.term || (await currentTerm()).id);
+  const board = (await buildBroadsheet(Number(classId), termId));
   if (!board) notFound();
   const numeric = board.assess.kind === "numeric";
   return (

@@ -5,7 +5,7 @@ import { feeItems } from "@/lib/repo";
 
 export default async function SchedulesPage({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string }> }) {
   const query = await searchParams;
-  const items = feeItems();
+  const items = (await feeItems());
   const tracks = ["creche", "nursery", "primary", "jss", "sss"];
   return (
     <div>

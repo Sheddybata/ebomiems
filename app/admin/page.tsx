@@ -4,11 +4,11 @@ import { classLabel, isRecentAdmission, personName, termTitle } from "@/lib/form
 import { formatNaira } from "@/lib/money";
 import { bursarOverview, commandCentre, countNewEnquiries } from "@/lib/repo";
 
-export default function CommandPage() {
-  const data = commandCentre();
-  const money = bursarOverview();
+export default async function CommandPage() {
+  const data = (await commandCentre());
+  const money = (await bursarOverview());
   const methods = Object.fromEntries(money.byMethod.map((row) => [row.method, row.value]));
-  const waiting = countNewEnquiries();
+  const waiting = (await countNewEnquiries());
   return (
     <div>
       <PageTitle title="Command centre" lede={`${termTitle(data.term.name, data.term.session_name)}. Expected is what was already owed on resumption, plus bills raised this term. Collected is money posted since ${money.term.starts_on}. Outstanding is the live ledger.`} />

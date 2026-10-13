@@ -5,9 +5,9 @@ import { formatDay, termTitle } from "@/lib/format";
 import { currentTerm, getSettings } from "@/lib/repo";
 import { DIVISIONS } from "@/lib/site";
 
-export default function HomePage() {
-  const settings = getSettings();
-  const term = currentTerm();
+export default async function HomePage() {
+  const settings = (await getSettings());
+  const term = (await currentTerm());
   return (
     <PublicFrame>
       <section className="bg-moss text-paper">

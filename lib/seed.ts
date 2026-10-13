@@ -95,41 +95,46 @@ const SUBJECTS: Record<string, [string, string][]> = {
   ],
 };
 
-export function seedIfEmpty(): void {
-  if (one("SELECT id FROM settings WHERE id=1")) return;
-  seedSchool();
+export async function seedIfEmpty(): Promise<void> {
+  if (await one("SELECT id FROM settings WHERE id=1")) return;
+  try {
+    await seedSchool();
+  } catch (error) {
+    if (await one("SELECT id FROM settings WHERE id=1")) return;
+    throw error;
+  }
 }
 
-export function seedSchool(): void {
-  withTx(() => {
+export async function seedSchool(): Promise<void> {
+  (await withTx(async () => {
     const now = new Date().toISOString();
     const teacherPassword = hashPassword(OFFICE.teacher.password);
-    const addUser = (role: string, name: string, email: string, phone: string | null, password: string) =>
-      run("INSERT INTO users (role, name, email, phone, password_hash, created_at) VALUES (?,?,?,?,?,?)", role, name, email, phone, password, now).lastInsertRowid;
+    const addUser = async (role: string, name: string, email: string, phone: string | null, password: string) =>
+      (await run("INSERT INTO users (role, name, email, phone, password_hash, created_at) VALUES (?,?,?,?,?,?)", role, name, email, phone, password, now)).lastInsertRowid;
 
-    addUser("admin", OFFICE.admin.name, OFFICE.admin.email, "08035550100", hashPassword(OFFICE.admin.password));
-    addUser("bursar", OFFICE.bursar.name, OFFICE.bursar.email, null, hashPassword(OFFICE.bursar.password));
+    (await addUser("admin", OFFICE.admin.name, OFFICE.admin.email, "08035550100", hashPassword(OFFICE.admin.password)));
+    (await addUser("bursar", OFFICE.bursar.name, OFFICE.bursar.email, null, hashPassword(OFFICE.bursar.password)));
 
     const teachers: Record<string, number> = {
-      blessing: addUser("teacher", "Blessing Ekeoma", "blessing.ekeoma@ebomischool.org", "08035550110", teacherPassword),
-      chika: addUser("teacher", "Chika Akwudolu", "chika.akwudolu@ebomischool.org", "08035550111", teacherPassword),
-      favour: addUser("teacher", "Favour Elijah", "favour.elijah@ebomischool.org", "08035550112", teacherPassword),
-      mary: addUser("teacher", "Mary Ejeh", "mary.ejeh@ebomischool.org", "08035550113", teacherPassword),
-      celina: addUser("teacher", "Celina Udemara", "celina.udemara@ebomischool.org", "08035550114", teacherPassword),
-      anna: addUser("teacher", "Anna Abiola", "anna.abiola@ebomischool.org", "08035550115", teacherPassword),
-      chinyere: addUser("teacher", OFFICE.teacher.name, OFFICE.teacher.email, "08035550103", teacherPassword),
-      emmanuel: addUser("teacher", "Emmanuel Adakole", "emmanuel.adakole@ebomischool.org", "08035550116", teacherPassword),
-      chinwe: addUser("teacher", "Chinwe Kanu", "chinwe.kanu@ebomischool.org", "08035550117", teacherPassword),
-      loveline: addUser("teacher", "Njoku Loveline", "loveline.njoku@ebomischool.org", "08035550118", teacherPassword),
+      blessing: (await addUser("teacher", "Blessing Ekeoma", "blessing.ekeoma@ebomischool.org", "08035550110", teacherPassword)),
+      chika: (await addUser("teacher", "Chika Akwudolu", "chika.akwudolu@ebomischool.org", "08035550111", teacherPassword)),
+      favour: (await addUser("teacher", "Favour Elijah", "favour.elijah@ebomischool.org", "08035550112", teacherPassword)),
+      mary: (await addUser("teacher", "Mary Ejeh", "mary.ejeh@ebomischool.org", "08035550113", teacherPassword)),
+      celina: (await addUser("teacher", "Celina Udemara", "celina.udemara@ebomischool.org", "08035550114", teacherPassword)),
+      anna: (await addUser("teacher", "Anna Abiola", "anna.abiola@ebomischool.org", "08035550115", teacherPassword)),
+      chinyere: (await addUser("teacher", OFFICE.teacher.name, OFFICE.teacher.email, "08035550103", teacherPassword)),
+      emmanuel: (await addUser("teacher", "Emmanuel Adakole", "emmanuel.adakole@ebomischool.org", "08035550116", teacherPassword)),
+      chinwe: (await addUser("teacher", "Chinwe Kanu", "chinwe.kanu@ebomischool.org", "08035550117", teacherPassword)),
+      loveline: (await addUser("teacher", "Njoku Loveline", "loveline.njoku@ebomischool.org", "08035550118", teacherPassword)),
     };
 
-    const session = run("INSERT INTO sessions (name, is_current) VALUES ('2026/2027', 1)").lastInsertRowid;
-    const term = run(
+    const session = (await run("INSERT INTO sessions (name, is_current) VALUES ('2026/2027', 1)")).lastInsertRowid;
+    const term = (await run(
       "INSERT INTO terms (session_id, name, starts_on, ends_on, next_begins_on, is_current) VALUES (?, 'First', '2026-09-14', '2026-12-18', '2027-01-09', 1)",
       session,
-    ).lastInsertRowid;
+    )).lastInsertRowid;
 
-    run(
+    (await run(
       `INSERT INTO settings (id, school_name, motto, address, phone, email, principal_name, bank_name, account_name, account_number, report_lock, current_session_id, current_term_id)
        VALUES (1, ?, ?, ?, '08035550100', ?, ?, '', ?, '', 1, ?, ?)`,
       SCHOOL.name,
@@ -140,7 +145,7 @@ export function seedSchool(): void {
       SCHOOL.accountName,
       session,
       term,
-    );
+    ));
 
     const classPlan: [string, string, string, string, number, string][] = [
       ["Creche", "", "creche", "CR", 10, "blessing"],
@@ -165,7 +170,7 @@ export function seedSchool(): void {
     ];
     for (const [name, arm, track, code, sort, teacher] of classPlan) {
       const teacherId = teacher ? teachers[teacher] : null;
-      const id = run(
+      const id = (await run(
         "INSERT INTO classes (name, arm, track, level_code, sort_order, form_teacher_id) VALUES (?,?,?,?,?,?)",
         name,
         arm,
@@ -173,22 +178,22 @@ export function seedSchool(): void {
         code,
         sort,
         teacherId,
-      ).lastInsertRowid;
-      if (teacherId) run("INSERT INTO teacher_classes (user_id, class_id, is_form_teacher) VALUES (?,?,1)", teacherId, id);
+      )).lastInsertRowid;
+      if (teacherId) (await run("INSERT INTO teacher_classes (user_id, class_id, is_form_teacher) VALUES (?,?,1)", teacherId, id));
     }
 
     for (const [track, list] of Object.entries(SUBJECTS)) {
-      list.forEach(([name, shortName], index) => {
-        run("INSERT INTO subjects (name, short_name, track, sort_order) VALUES (?,?,?,?)", name, shortName, track, index + 1);
-      });
+      for (const [index, [name, shortName]] of list.entries()) {
+        (await run("INSERT INTO subjects (name, short_name, track, sort_order) VALUES (?,?,?,?)", name, shortName, track, index + 1));
+      }
     }
-  });
+  }));
 }
 
-export function emptySchool(): void {
-  run("PRAGMA foreign_keys = OFF");
+export async function emptySchool(): Promise<void> {
+  (await run("PRAGMA foreign_keys = OFF"));
   try {
-  withTx(() => {
+  (await withTx(async () => {
     const tables = [
       "attendance_marks",
       "attendance_days",
@@ -214,9 +219,9 @@ export function emptySchool(): void {
       "users",
       "settings",
     ];
-    for (const table of tables) run(`DELETE FROM ${table}`);
-  });
+    for (const table of tables) (await run(`DELETE FROM ${table}`));
+  }));
   } finally {
-    run("PRAGMA foreign_keys = ON");
+    (await run("PRAGMA foreign_keys = ON"));
   }
 }

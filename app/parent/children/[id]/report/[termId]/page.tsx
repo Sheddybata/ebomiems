@@ -10,9 +10,9 @@ import { gateTerm, getPupil } from "@/lib/repo";
 export default async function ParentReportPage({ params }: { params: Promise<{ id: string; termId: string }> }) {
   const user = await requireUser("parent");
   const { id, termId } = await params;
-  const pupil = getPupil(Number(id));
+  const pupil = (await getPupil(Number(id)));
   if (!pupil || pupil.parent_id !== user.id) notFound();
-  const gate = gateTerm(pupil.id, Number(termId));
+  const gate = (await gateTerm(pupil.id, Number(termId)));
   if (gate !== "ready") {
     return (
       <div>
@@ -21,7 +21,7 @@ export default async function ParentReportPage({ params }: { params: Promise<{ i
       </div>
     );
   }
-  const sheet = buildReport(pupil.id, Number(termId));
+  const sheet = (await buildReport(pupil.id, Number(termId)));
   if (!sheet) notFound();
   return (
     <div>

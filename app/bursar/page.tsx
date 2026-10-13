@@ -4,8 +4,8 @@ import { termTitle } from "@/lib/format";
 import { formatNaira } from "@/lib/money";
 import { bursarOverview } from "@/lib/repo";
 
-export default function BursarPage() {
-  const data = bursarOverview();
+export default async function BursarPage() {
+  const data = (await bursarOverview());
   const methods = Object.fromEntries(data.byMethod.map((row) => [row.method, row.value]));
   return (
     <div>

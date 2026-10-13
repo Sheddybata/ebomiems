@@ -13,10 +13,10 @@ const NEXT: Record<string, [string, string][]> = {
 
 export default async function ResultsPage({ searchParams }: { searchParams: Promise<{ term?: string; error?: string; ok?: string }> }) {
   const query = await searchParams;
-  const terms = listTerms();
-  const termId = Number(query.term || currentTerm().id);
-  const term = terms.find((item) => item.id === termId) ?? currentTerm();
-  const rows = resultsBoard(term.id);
+  const terms = (await listTerms());
+  const termId = Number(query.term || (await currentTerm()).id);
+  const term = terms.find((item) => item.id === termId) ?? (await currentTerm());
+  const rows = (await resultsBoard(term.id));
   return (
     <div>
       <PageTitle title="Results" lede="Only the next legal step is shown. Lock tells the form teacher and freezes scores. Return sends the markbook back to the teacher. Publish tells each parent. A fee hold can still hide a published term until that term’s charges are covered." />

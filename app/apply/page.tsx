@@ -6,7 +6,7 @@ import { listClasses } from "@/lib/repo";
 
 export default async function ApplyPage({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string }> }) {
   const query = await searchParams;
-  const classes = listClasses();
+  const classes = (await listClasses());
   return (
     <PublicFrame>
       <DoorPage kicker="Admissions" title="Apply for a place" lede="Send the child’s details. The school reads the request and contacts you. It does not reserve a place, and it does not open a parent login. That happens only when admin enrols the child.">

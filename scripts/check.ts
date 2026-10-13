@@ -12,7 +12,7 @@ async function main(): Promise<void> {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ebomi-"));
   process.env.EBOMI_DB = path.join(dir, "school.sqlite");
   const { boot } = await import("../lib/ready");
-  boot();
+  (await boot());
   const repo = await import("../lib/repo");
   const mutate = await import("../lib/mutate");
   const { closeDb } = await import("../lib/db");
@@ -34,21 +34,21 @@ async function main(): Promise<void> {
     assert(!termIsClear(entries, 2), "partial term is not clear");
     assert(balanceOf(entries) === 60, "balance");
 
-    const settings = repo.getSettings();
+    const settings = (await repo.getSettings());
     assert(settings.email === SCHOOL.email, "school email");
     assert(settings.school_name === SCHOOL.name, "school name");
-    const staff = repo.listStaff();
+    const staff = (await repo.listStaff());
     assert(staff.some((person) => person.email === OFFICE.admin.email), "principal login");
     assert(staff.some((person) => person.email === OFFICE.bursar.email), "bursar login");
-    assert(repo.searchPupils("").length === 0, "no demo pupils");
-    assert(repo.listClasses().some((klass) => klass.name === "Nursery 3"), "Nursery 3");
-    assert(repo.listClasses().some((klass) => klass.name === "Primary 6" && !klass.form_teacher_id), "P6 waits for a teacher");
-    assert(repo.currentTerm().name === "First", "First term");
-    assert(repo.feeItems().length === 0, "no sample fees");
+    assert((await repo.searchPupils("")).length === 0, "no demo pupils");
+    assert((await repo.listClasses()).some((klass) => klass.name === "Nursery 3"), "Nursery 3");
+    assert((await repo.listClasses()).some((klass) => klass.name === "Primary 6" && !klass.form_teacher_id), "P6 waits for a teacher");
+    assert((await repo.currentTerm()).name === "First", "First term");
+    assert((await repo.feeItems()).length === 0, "no sample fees");
 
-    mutate.addFeeItem("primary", "Tuition", 1_000_000);
-    const primary4 = repo.listClasses().find((klass) => klass.name === "Primary 4")!;
-    const enrolled = mutate.enrolStudent({
+    (await mutate.addFeeItem("primary", "Tuition", 1_000_000));
+    const primary4 = (await repo.listClasses()).find((klass) => klass.name === "Primary 4")!;
+    const enrolled = (await mutate.enrolStudent({
       firstName: "Ada",
       lastName: "Test",
       otherName: "",
@@ -64,16 +64,16 @@ async function main(): Promise<void> {
       leavingReason: "",
       previousClass: "",
       previousPosition: "",
-    });
+    }));
     assert(/^EBM\/P4\/\d{3}$/.test(enrolled.admissionNo), enrolled.admissionNo);
-    const created = repo.getPupil(enrolled.studentId)!;
+    const created = (await repo.getPupil(enrolled.studentId))!;
     assert(created.balance_kobo === 1_000_000, "bill follows the schedule");
-    mutate.recordPayment(created.id, created.balance_kobo, "cash", 1);
-    assert(repo.getPupil(created.id)!.balance_kobo === 0, "cleared");
+    (await mutate.recordPayment(created.id, created.balance_kobo, "cash", 1));
+    assert((await repo.getPupil(created.id))!.balance_kobo === 0, "cleared");
 
     console.log("All checks passed.");
   } finally {
-    closeDb();
+    (await closeDb());
     fs.rmSync(dir, { recursive: true, force: true });
   }
 }

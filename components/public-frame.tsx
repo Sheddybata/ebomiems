@@ -17,7 +17,7 @@ const LINKS = [
 
 export async function PublicFrame({ children, paths = true }: { children: React.ReactNode; paths?: boolean }) {
   const user = await getUser();
-  const settings = getSettings();
+  const settings = (await getSettings());
   return (
     <div className={`min-h-screen ${paths ? "pb-20" : ""}`}>
       <header className="no-print sticky top-0 z-40 border-b border-white/10 bg-moss text-paper">

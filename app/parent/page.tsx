@@ -7,7 +7,7 @@ import { parentDesk } from "@/lib/repo";
 
 export default async function ParentPage() {
   const user = await requireUser("parent");
-  const desk = parentDesk(user.id);
+  const desk = (await parentDesk(user.id));
   return (
     <div>
       <PageTitle title={`Good day, ${user.name.split(" ")[0]}`} lede="Every ward on this account is here. Learners do not have a separate login. A child admitted in the last two weeks is marked New." />

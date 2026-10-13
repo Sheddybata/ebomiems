@@ -6,10 +6,10 @@ import { listClasses, searchPupils } from "@/lib/repo";
 
 export default async function StudentsPage({ searchParams }: { searchParams: Promise<{ q?: string; class?: string; fees?: string; error?: string }> }) {
   const query = await searchParams;
-  const classes = listClasses();
+  const classes = (await listClasses());
   const classId = Number(query.class || 0);
   const fees = query.fees === "owing" || query.fees === "clear" ? query.fees : "";
-  let pupils = searchPupils(query.q || "");
+  let pupils = (await searchPupils(query.q || ""));
   if (classId) pupils = pupils.filter((pupil) => pupil.class_id === classId);
   if (fees === "owing") pupils = pupils.filter((pupil) => pupil.balance_kobo > 0);
   if (fees === "clear") pupils = pupils.filter((pupil) => pupil.balance_kobo <= 0);

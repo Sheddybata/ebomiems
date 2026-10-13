@@ -4,8 +4,8 @@ import type { SessionUser } from "@/lib/types";
 import { Nav } from "./nav";
 import { Crest } from "./ui";
 
-export function Shell({ user, extra, children }: { user: SessionUser; extra?: { href: string; label: string }[]; children: React.ReactNode }) {
-  const settings = getSettings();
+export async function Shell({ user, extra, children }: { user: SessionUser; extra?: { href: string; label: string }[]; children: React.ReactNode }) {
+  const settings = (await getSettings());
   return (
     <div className="min-h-screen overflow-x-clip">
       <header className="no-print bg-moss text-paper">

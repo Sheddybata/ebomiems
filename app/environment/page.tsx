@@ -4,8 +4,8 @@ import { PublicFrame } from "@/components/public-frame";
 import { Slideshow } from "@/components/slideshow";
 import { getSettings } from "@/lib/repo";
 
-export default function EnvironmentPage() {
-  const settings = getSettings();
+export default async function EnvironmentPage() {
+  const settings = (await getSettings());
   return (
     <PublicFrame>
       <DoorPage kicker="Environment" title="A school you can walk through" lede={`${settings.address}. The rooms follow the child: care at the start, classrooms through Primary, and laboratory work in Junior and Senior Secondary.`}>

@@ -6,9 +6,9 @@ import { classLabel, formatPhone, personName } from "@/lib/format";
 import { formatNaira } from "@/lib/money";
 import { getSettings, listDebtors } from "@/lib/repo";
 
-export default function DebtorsPage() {
-  const debtors = listDebtors();
-  const settings = getSettings();
+export default async function DebtorsPage() {
+  const debtors = (await listDebtors());
+  const settings = (await getSettings());
   const total = debtors.reduce((sum, pupil) => sum + pupil.balance_kobo, 0);
   let lastClass = "";
   return (

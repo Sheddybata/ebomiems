@@ -5,9 +5,9 @@ import { getEnquiry, listClasses, listParents } from "@/lib/repo";
 
 export default async function EnrolPage({ searchParams }: { searchParams: Promise<{ error?: string; enquiry?: string }> }) {
   const query = await searchParams;
-  const classes = listClasses();
-  const parents = listParents();
-  const enquiry = query.enquiry ? getEnquiry(Number(query.enquiry)) : undefined;
+  const classes = (await listClasses());
+  const parents = (await listParents());
+  const enquiry = query.enquiry ? (await getEnquiry(Number(query.enquiry))) : undefined;
   const child = (enquiry?.child_name || "").trim().split(/\s+/);
   const firstName = child[0] || "";
   const lastName = child.slice(1).join(" ");

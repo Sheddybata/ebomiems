@@ -9,13 +9,21 @@ import { classForTerm, currentTerm, gateTerm, getPupil, listTerms, scoresForClas
 export default async function ChildResultsPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser("parent");
   const { id } = await params;
-  const pupil = getPupil(Number(id));
+  const pupil = (await getPupil(Number(id)));
   if (!pupil || pupil.parent_id !== user.id) notFound();
-  const term = currentTerm();
+  const term = (await currentTerm());
   const assess = assessmentOf(pupil.track);
-  const subjects = subjectsForTrack(pupil.track);
-  const scores = new Map(scoresForClass(pupil.class_id, term.id).filter((score) => score.student_id === pupil.id).map((score) => [score.subject_id, score]));
-  const terms = listTerms().filter((item) => classForTerm(pupil.id, item.id));
+  const subjects = (await subjectsForTrack(pupil.track));
+  const scores = new Map((await scoresForClass(pupil.class_id, term.id)).filter((score) => score.student_id === pupil.id).map((score) => [score.subject_id, score]));
+  const terms = (
+    await Promise.all(
+      (await listTerms()).map(async (item) => ({
+        item,
+        classId: await classForTerm(pupil.id, item.id),
+        gate: await gateTerm(pupil.id, item.id),
+      })),
+    )
+  ).filter((row) => row.classId);
   return (
     <div>
       <PageTitle title={`${pupil.first_name}'s results`} lede={`${pupil.admission_no} · result PIN ${pupil.pin}. During the term you see continuous assessment. The official sheet appears after the school publishes it, and only if that term’s fees are clear.`} />
@@ -36,15 +44,12 @@ export default async function ChildResultsPage({ params }: { params: Promise<{ i
       </table>
       <p className="mt-2 text-sm text-muted">Examination scores stay with the school until the official report is published.</p>
       <ul className="mt-6 space-y-2 text-sm">
-        {terms.map((item) => {
-          const gate = gateTerm(pupil.id, item.id);
-          return (
+        {terms.map(({ item, gate }) => (
             <li key={item.id} className="rounded-lg border border-line bg-card px-3 py-2">
               <span className="font-semibold">{termTitle(item.name, item.session_name)}</span>
               {gate === "ready" ? <Link className="ml-2 font-semibold text-moss" href={`/parent/children/${pupil.id}/report/${item.id}`}>Print official report</Link> : <span className="mt-1 block text-muted">{resultMessage(gate, "parent")}</span>}
             </li>
-          );
-        })}
+        ))}
       </ul>
       <p className="mt-4 text-sm text-muted">Class now: {classLabel(pupil.class_name, pupil.class_arm)}</p>
     </div>

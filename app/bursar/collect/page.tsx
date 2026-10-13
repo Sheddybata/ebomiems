@@ -6,8 +6,8 @@ import { getPupil, searchPupils } from "@/lib/repo";
 
 export default async function CollectPage({ searchParams }: { searchParams: Promise<{ q?: string; student?: string; error?: string; ok?: string }> }) {
   const query = await searchParams;
-  const selected = query.student ? getPupil(Number(query.student)) : undefined;
-  const matches = query.q ? searchPupils(query.q).slice(0, 12) : [];
+  const selected = query.student ? (await getPupil(Number(query.student))) : undefined;
+  const matches = query.q ? (await searchPupils(query.q)).slice(0, 12) : [];
   return (
     <div>
       <PageTitle title="Collect at the desk" lede="Cash and POS are receipted immediately. Use confirmed transfer only when you have already seen the credit. An upload from a parent still waits on the proof queue." />

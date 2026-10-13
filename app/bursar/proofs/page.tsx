@@ -7,8 +7,8 @@ import { listProofs } from "@/lib/repo";
 
 export default async function ProofsPage({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string }> }) {
   const query = await searchParams;
-  const pending = listProofs("pending");
-  const decided = [...listProofs("approved").slice(0, 6), ...listProofs("rejected").slice(0, 6)];
+  const pending = (await listProofs("pending"));
+  const decided = [...(await listProofs("approved")).slice(0, 6), ...(await listProofs("rejected")).slice(0, 6)];
   return (
     <div>
       <PageTitle title="Transfer proofs" lede="A proof is a request. Approving it posts a receipt on the ledger. Rejecting it leaves the balance unchanged." />

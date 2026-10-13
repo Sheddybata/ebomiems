@@ -3,8 +3,8 @@ import { PublicFrame } from "@/components/public-frame";
 import { formatPhone } from "@/lib/format";
 import { getSettings } from "@/lib/repo";
 
-export default function AboutPage() {
-  const settings = getSettings();
+export default async function AboutPage() {
+  const settings = (await getSettings());
   return (
     <PublicFrame>
       <DoorPage kicker="About" title={settings.school_name} lede="One school in Jos, from the creche room to Senior Secondary. Parents and staff already in the school sign in. Families who are still looking apply, inquire, or book a tour.">

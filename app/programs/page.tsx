@@ -10,7 +10,7 @@ const PROGRAMS = [
   { title: "Science practicals", body: "Junior and Senior Secondary bills include a laboratory levy, because science is taught as practical work. Senior Secondary then divides into Science, Arts and Commercial." },
 ];
 
-export default function ProgramsPage() {
+export default async function ProgramsPage() {
   return (
     <PublicFrame>
       <DoorPage kicker="Programs" title="What sits beside the classroom" lede="These are the programs already on the timetable and the report. The school has not published a separate list of clubs, so this page does not invent one.">

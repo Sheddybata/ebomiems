@@ -18,20 +18,20 @@ import {
   type SubjectRow,
 } from "./repo";
 
-function oneRemark(studentId: number, termId: number) {
-  return one<{ form_comment: string; principal_remark: string }>(
+async function oneRemark(studentId: number, termId: number) {
+  return (await one<{ form_comment: string; principal_remark: string }>(
     "SELECT form_comment, principal_remark FROM remarks WHERE student_id=? AND term_id=?",
     studentId,
     termId,
-  );
+  ));
 }
 
-function traits(studentId: number, termId: number) {
-  return rows<{ trait: string; domain: string; rating: number }>(
+async function traits(studentId: number, termId: number) {
+  return (await rows<{ trait: string; domain: string; rating: number }>(
     "SELECT trait, domain, rating FROM trait_ratings WHERE student_id=? AND term_id=?",
     studentId,
     termId,
-  );
+  ));
 }
 
 function totalOf(score: ScoreRow | undefined, assess: Assessment): number | null {
@@ -57,7 +57,7 @@ export type ReportSheet = {
   className: string;
   track: string;
   termLabel: string;
-  term: ReturnType<typeof getTerm>;
+  term: Awaited<ReturnType<typeof getTerm>>;
   assess: Assessment;
   attendance: { opened: number; present: number; absent: number };
   subjects: ReportSubject[];
@@ -77,20 +77,20 @@ export type ReportSheet = {
   age: number | null;
 };
 
-export function buildReport(studentId: number, termId: number): ReportSheet | null {
-  const pupil = getPupil(studentId);
-  const classId = classForTerm(studentId, termId);
+export async function buildReport(studentId: number, termId: number): Promise<ReportSheet | null> {
+  const pupil = (await getPupil(studentId));
+  const classId = (await classForTerm(studentId, termId));
   if (!pupil || !classId) return null;
-  const klass = getClass(classId);
+  const klass = (await getClass(classId));
   if (!klass) return null;
-  const term = getTerm(termId);
+  const term = (await getTerm(termId));
   const assess = assessmentOf(klass.track);
-  const subjects = subjectsForTrack(klass.track);
-  const cohort = pupilsForTerm(classId, termId);
-  const scores = scoresForClass(classId, termId);
+  const subjects = (await subjectsForTrack(klass.track));
+  const cohort = (await pupilsForTerm(classId, termId));
+  const scores = (await scoresForClass(classId, termId));
   const byKey = new Map(scores.map((score) => [`${score.student_id}:${score.subject_id}`, score]));
-  const release = releaseOf(classId, termId);
-  const settings = getSettings();
+  const release = (await releaseOf(classId, termId));
+  const settings = (await getSettings());
 
   const subjectPositions = new Map<number, Map<number, number>>();
   if (assess.kind === "numeric") {
@@ -145,10 +145,10 @@ export function buildReport(studentId: number, termId: number): ReportSheet | nu
   });
 
   const mine = completeIds.find((row) => row.id === pupil.id);
-  const remark = oneRemark(pupil.id, termId);
-  const traitRows = traits(pupil.id, termId);
+  const remark = (await oneRemark(pupil.id, termId));
+  const traitRows = (await traits(pupil.id, termId));
   const traitMap = new Map(traitRows.map((row) => [row.trait, row.rating]));
-  const attendance = attendanceStats(pupil.id, termId);
+  const attendance = (await attendanceStats(pupil.id, termId));
   const age = pupil.dob ? ageYears(pupil.dob, term.ends_on) : null;
 
   return {
@@ -172,7 +172,7 @@ export function buildReport(studentId: number, termId: number): ReportSheet | nu
     principalRemark: remark?.principal_remark ?? "",
     formTeacher: release.form_teacher_name || klass.form_teacher_name || "Form teacher",
     principal: release.principal_name || settings.principal_name,
-    nextFeesKobo: scheduleTotal(klass.track),
+    nextFeesKobo: (await scheduleTotal(klass.track)),
     releaseStatus: release.status,
     age,
   };
@@ -196,14 +196,14 @@ export type BroadRow = {
   position: string | null;
 };
 
-export function buildBroadsheet(classId: number, termId: number) {
-  const klass = getClass(classId);
+export async function buildBroadsheet(classId: number, termId: number) {
+  const klass = (await getClass(classId));
   if (!klass) return null;
-  const term = getTerm(termId);
+  const term = (await getTerm(termId));
   const assess = assessmentOf(klass.track);
-  const subjects = subjectsForTrack(klass.track);
-  const cohort = pupilsForTerm(classId, termId);
-  const scores = scoresForClass(classId, termId);
+  const subjects = (await subjectsForTrack(klass.track));
+  const cohort = (await pupilsForTerm(classId, termId));
+  const scores = (await scoresForClass(classId, termId));
   const byKey = new Map(scores.map((score) => [`${score.student_id}:${score.subject_id}`, score]));
   const complete: { id: number; score: number }[] = [];
   const rowsOut: BroadRow[] = cohort.map((pupil) => {
@@ -235,7 +235,7 @@ export function buildBroadsheet(classId: number, termId: number) {
     assess,
     subjects,
     rows: rowsOut,
-    release: releaseOf(classId, termId),
-    settings: getSettings(),
+    release: (await releaseOf(classId, termId)),
+    settings: (await getSettings()),
   };
 }

@@ -10,7 +10,7 @@ import { getReceipt } from "@/lib/repo";
 export default async function ReceiptPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
-  const receipt = getReceipt(Number(id));
+  const receipt = (await getReceipt(Number(id)));
   if (!receipt) notFound();
   const allowed = user.role === "admin" || user.role === "bursar" || (user.role === "parent" && receipt.pupil.parent_id === user.id);
   if (!allowed) notFound();

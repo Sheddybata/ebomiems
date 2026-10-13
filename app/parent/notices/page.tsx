@@ -7,7 +7,7 @@ import { noticesFor } from "@/lib/repo";
 export default async function NoticesPage({ searchParams }: { searchParams: Promise<{ ok?: string }> }) {
   const user = await requireUser("parent");
   const query = await searchParams;
-  const notices = noticesFor(user.id);
+  const notices = (await noticesFor(user.id));
   return (
     <div>
       <PageTitle title="Noticeboard" lede="A new child brings a welcome note, with the admission number, result PIN and this term’s bill.">

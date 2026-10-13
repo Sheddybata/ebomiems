@@ -9,7 +9,7 @@ import { getPupil, getSettings } from "@/lib/repo";
 export default async function ParentLetterPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser("parent");
   const { id } = await params;
-  const pupil = getPupil(Number(id));
+  const pupil = (await getPupil(Number(id)));
   if (!pupil || pupil.parent_id !== user.id) notFound();
   return (
     <div>
@@ -17,7 +17,7 @@ export default async function ParentLetterPage({ params }: { params: Promise<{ i
         <Link href="/parent" className="text-sm font-semibold text-moss">Back to family</Link>
         <PrintButton label="Print letter" />
       </div>
-      <AdmissionLetter pupil={pupil} settings={getSettings()} className={classLabel(pupil.class_name, pupil.class_arm)} />
+      <AdmissionLetter pupil={pupil} settings={(await getSettings())} className={classLabel(pupil.class_name, pupil.class_arm)} />
     </div>
   );
 }

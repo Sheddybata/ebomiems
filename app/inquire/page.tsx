@@ -11,7 +11,7 @@ export default async function InquirePage({ searchParams }: { searchParams: Prom
         <Sent ok={query.ok} error={query.error} />
         <EnquiryForm kind="inquire">
           <PersonFields />
-          <StageField classes={listClasses()} />
+          <StageField classes={(await listClasses())} />
           <label className="text-sm"><span className={labelClass}>Your question</span><textarea name="note" required rows={5} className={inputClass} /></label>
         </EnquiryForm>
       </DoorPage>

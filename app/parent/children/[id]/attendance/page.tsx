@@ -7,11 +7,11 @@ import { attendanceHistory, attendanceStats, currentTerm, getPupil } from "@/lib
 export default async function AttendancePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser("parent");
   const { id } = await params;
-  const pupil = getPupil(Number(id));
+  const pupil = (await getPupil(Number(id)));
   if (!pupil || pupil.parent_id !== user.id) notFound();
-  const term = currentTerm();
-  const stats = attendanceStats(pupil.id, term.id);
-  const days = attendanceHistory(pupil.id, term.id);
+  const term = (await currentTerm());
+  const stats = (await attendanceStats(pupil.id, term.id));
+  const days = (await attendanceHistory(pupil.id, term.id));
   const today = todayISO();
   const weekday = new Date(today + "T00:00:00Z").getUTCDay();
   const markedToday = days.some((day) => day.day === today);

@@ -7,8 +7,8 @@ import { listClasses, listInvoices } from "@/lib/repo";
 
 export default async function InvoicesPage({ searchParams }: { searchParams: Promise<{ q?: string; error?: string; ok?: string }> }) {
   const query = await searchParams;
-  const invoices = listInvoices(query.q || "");
-  const classes = listClasses().filter((klass) => klass.pupils > 0);
+  const invoices = (await listInvoices(query.q || ""));
+  const classes = (await listClasses()).filter((klass) => klass.pupils > 0);
   return (
     <div>
       <PageTitle title="Invoices" lede="Issuing a class bill posts each active learner who does not already have one. Arrears are shown on the bill and stay on the ledger; they are not charged twice." />
