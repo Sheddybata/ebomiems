@@ -2,9 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
-  outputFileTracingIncludes: {
-    "/**": ["./supabase/schema.sql"],
-  },
   serverExternalPackages: ["node:sqlite"],
   webpack: (config, { isServer }) => {
     if (isServer) {

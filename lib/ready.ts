@@ -1,4 +1,4 @@
-import { migrate } from "./db";
+import { markBooting, migrate } from "./db";
 import { seedIfEmpty } from "./seed";
 
 let pending: Promise<void> | null = null;
@@ -20,15 +20,20 @@ function pause(ms: number): Promise<void> {
 }
 
 async function start(): Promise<void> {
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    try {
-      await migrate();
-      await seedIfEmpty();
-      return;
-    } catch (error) {
-      if (!isRetryable(error) || attempt === 7) throw error;
-      await pause(150 * (attempt + 1));
+  markBooting(true);
+  try {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      try {
+        await migrate();
+        await seedIfEmpty();
+        return;
+      } catch (error) {
+        if (!isRetryable(error) || attempt === 7) throw error;
+        await pause(150 * (attempt + 1));
+      }
     }
+  } finally {
+    markBooting(false);
   }
 }
 

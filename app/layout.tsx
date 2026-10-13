@@ -7,7 +7,6 @@ const sans = Source_Sans_3({ subsets: ["latin"], variable: "--font-source-sans" 
 const serif = Source_Serif_4({ subsets: ["latin"], variable: "--font-source-serif" });
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
 
 export const metadata: Metadata = {
   title: { default: "EBOMI Highschool International", template: "%s · EBOMI Highschool International" },
